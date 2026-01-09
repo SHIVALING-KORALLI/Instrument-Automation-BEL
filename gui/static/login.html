@@ -1,0 +1,25 @@
+<!-- gui/static/login.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link rel="stylesheet" href="/static/login.css" />
+</head>
+<body>
+  <div class="login-container">
+    <div class="brand">
+      <img src="/static/logo.png" class="logo-img" alt="BEL Logo">
+      <h1 class="title">PDIC CoE R&WS</h1>
+    </div>
+    <form id="loginForm">
+      <label for="password">Enter Password:</label>
+      <input type="password" id="password" required>
+      <button type="submit">Login</button>
+      <p id="error-message" class="error"></p>
+    </form>
+  </div>
+  <script src="/static/login.js"></script>
+</body>
+</html>
