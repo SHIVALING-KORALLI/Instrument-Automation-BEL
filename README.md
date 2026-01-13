@@ -1,80 +1,110 @@
-# PDIC CoE R&WS — Instrument Automation Dashboard
+---
 
-A specialized **Full-Stack Automation Framework** developed for the Digital TRC (Transmit/Receive Control) at BEL. This system provides a centralized web interface to manage high-end RF laboratory equipment, program FPGAs, and execute automated Acceptance Test Procedures (ATP).
+# 📡 Multi-Instrument Automation & Digital TRC Control System
 
-## 🌐 Network-Wide Accessibility
+### Centralized Web-ATE for RF Testing, FPGA Programming, and 10G UDP Protocols
 
-The system is designed for remote laboratory management. Once the Flask server is running on a host PC connected to the instrument network:
+---
 
-* **Any system on the same Ethernet network** can access the GUI via the host's IP address.
-* **Centralized Control:** An engineer can monitor tests or adjust power supplies from a desk while the hardware resides in a clean room or test bay.
+## 📌 Project Overview
 
-## 🛠 Hardware Integration & Communication
+This system is a professional **Automated Test Equipment (ATE)** framework designed for Bharat Electronics Limited. It bridges the gap between high-level software and laboratory hardware, enabling engineers to perform complex RF measurements and board configurations via a network-accessible Web GUI.
 
-The system utilizes a **USB Hub** and **Ethernet (TCP/IP)** architecture to bridge the software with physical instruments:
+* **Remote Accessibility:** Access the GUI from any system on the Ethernet network.
+* **Hardware Bridge:** Uses a high-speed **USB Hub** to consolidate instrument connections.
+* **End-to-End Automation:** Handles everything from FPGA programming to final PDF/Excel report generation.
 
-* **PyVISA & SCPI:** Primary communication layer for instrument control.
-* **USB Hub Interface:** Connects multiple instruments (PSUs, Signal Generators) to the host PC.
-* **UDP Protocol:** High-speed 10G UDP communication for data packet exchange with Digital TRC boards.
-* **RS-422:** Serial communication for peripheral hardware control.
+---
 
-## 🚀 Key Features & Modules
+## 🔐 System Access & Security
 
-### 1. Instrument Control Center
+The application begins with a secure login portal, ensuring that only authorized personnel can control the high-value laboratory instruments.
 
-Directly manage and monitor multiple instruments through a unified interface:
+---
 
-* **Power Supplies (N8739A):** Set Voltage/Current and toggle Output state.
-* **Signal Generator (SMB100A):** Control Frequency and RF Power levels.
-* **Signal Analyzer (N9030B):** Adjust Center Frequency, Span, and RBW. Includes **Remote Screenshot** and **Trace Fetching** (Max Hold/Clear Trace) capabilities.
+## 🛠 Feature-Rich Control Dashboard
 
-### 2. FPGA Programming
+The main interface allows real-time manual and automated control of the entire test bench.
 
-Integrated Vivado batch-mode support to program FPGA devices directly from the web GUI.
+### 1. Instrument Control Suite (PyVISA/SCPI)
 
-* Uses a dedicated `.tcl` script to automate the Xilinx hardware manager workflow.
+* **Power Supplies (N8739A):** Dual-channel monitoring (Voltage/Current) with safety output toggles.
+* **Signal Generator (SMB100A):** Precision RF frequency and power level injection.
+* **Signal Analyzer (N9030B):** Live trace fetching, peak searching, and remote screenshot capture.
 
-### 3. Digital TRC Automation
+### 2. High-Speed Protocol Implementation
 
-Automated test sequences for DTRC boards:
+The system goes beyond simple SCPI, implementing low-level industrial protocols:
 
-* Configurable **Pulse Width** and **PRT** (Pulse Repetition Time).
-* **Real-time Progress:** Live logs and status polling via Server-Sent Events (SSE).
+* **10G UDP Protocol:** Custom 40-byte packet injection with loopback verification for Digital TRC boards.
+* **RS-422/Serial:** 9-byte hex packet communication for peripheral hardware control.
+* **FPGA Programming:** Integrated **Xilinx Vivado** batch-mode control to program boards via `.tcl` scripts.
 
-### 4. Advanced Reporting
+---
 
-The system automatically compiles test data into professional Excel reports.
+## 🧬 Technical Implementation (app.py)
 
-* **Data Visualization:** Includes "Power vs. Spot" charts.
-* **Insights:** Auto-calculates Max/Min Power, Average Power, and Power Range (dB).
+The backend is built on a robust **Flask** architecture using **Server-Sent Events (SSE)** for real-time log streaming.
 
-## 📁 Repository Structure
+### Logic Breakdown:
 
-```text
-├── gui/
-│   ├── app.py            # Flask Backend & API Endpoints
-│   └── static/           # UI Files (HTML, CSS, login.png, index.html)
-├── core/
-│   ├── controller.py     # Main automation logic
-│   └── report_generator.py # Excel & Chart generation
-├── drivers/
-│   ├── base_driver.py    # VISA Discovery & Resource management
-│   ├── n8739a_supply.py  # Power Supply Driver
-│   ├── smb_generator.py  # Signal Generator Driver
-│   └── pxa_analyzer.py   # Signal Analyzer Driver
-└── scripts/
-    └── program_fpga.tcl  # FPGA Programming Automation
+* **Driver Layer:** Individual classes for `N8739APowerSupply`, `SMB100AGenerator`, and `N9030BAnalyzer` inherit from a base driver to handle VISA resource management.
+* **Automation Loop:** The `/api/run` endpoint orchestrates the `AutomationController`, which steps through frequencies, captures markers, and verifies limits.
+* **Data Serialization:** Trace data is fetched as raw binary (`REAL,64`), unpacked using Python's `struct` library, and converted to JSON for browser-side plotting.
+
+```python
+# Example: Binary Trace Unpacking Logic in app.py
+def try_unpack(fmt_char):
+    fmt = f"{fmt_char}{count}d"
+    vals = struct.unpack(fmt, payload)
+    return vals # Returns finite, calibrated trace data
 
 ```
 
-## 🔧 Installation
+---
 
-1. **Prerequisites:**
-* Install [NI-VISA](https://www.google.com/search?q=https://www.ni.com/en-in/support/downloads/drivers/download.ni-visa.html) or an equivalent VISA backend.
-* Connect instruments via **USB Hub** or Ethernet.
+## 📊 Automated Report Generation
 
+One of the most critical features is the automated **ATP (Acceptance Test Procedure)** reporting.
 
-2. **Setup:**
+### Session Logging
+
+Every automated run creates a detailed entry in a daily Excel workbook, logging every frequency spot and measured power level.
+
+### Power Analysis & Charts
+
+The system automatically generates a **Power vs. Spot** chart and calculates:
+
+* **Maximum & Minimum Power**
+* **Average Power Output**
+* **Power Range (Flatness) in dB**
+
+---
+
+## 📂 Project Structure
+
+```text
+├── gui/
+│   ├── app.py              # Main Flask Backend & SSE Logic
+│   └── static/             # Frontend (HTML/JS/Images)
+├── core/
+│   ├── controller.py       # Orchestration of test sequences
+│   └── report_generator.py # Excel, Pandas, and Chart logic
+├── drivers/
+│   ├── n8739a_supply.py    # PSU SCPI Driver
+│   ├── smb_generator.py    # Signal Gen SCPI Driver
+│   └── pxa_analyzer.py     # Spectrum Analyzer SCPI Driver
+└── scripts/
+    └── program_fpga.tcl    # Vivado Hardware Manager Automation
+
+```
+
+---
+
+## 🚀 Getting Started
+
+1. **Hardware Connection:** Connect all instruments to the host PC via the **USB Hub**. Connect the PC to the local Ethernet network.
+2. **Environment Setup:**
 ```bash
 pip install flask pyvisa pyvisa-py pandas openpyxl pyserial
 
@@ -88,9 +118,13 @@ python gui/app.py
 ```
 
 
-*Navigate to `http://<your-ip-address>:80` in your browser.*
+4. **Network Access:** Access via `http://[Host_IP]:80` from any networked computer.
 
 ---
 
-**Developed by Shivaling Koralli | PDIC CoE R&WS**
+### 👤 Author
+
+**Shivaling Koralli** *PDIC CoE R&WS, Bharat Electronics Limited*
+
+---
 
